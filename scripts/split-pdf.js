@@ -151,6 +151,35 @@ async function detectQuestionsOnPage(ai, image, modelId = MODEL_IDS.FLASH, maxRe
 }
 
 /**
+ * Merges two base64 images vertically with an optional gap.
+ * A negative gap allows for overlapping (removing internal paddings).
+ */
+async function mergeBase64Images(topBase64, bottomBase64, gap = 0) {
+  const [imgTop, imgBottom] = await Promise.all([
+    loadImage(topBase64),
+    loadImage(bottomBase64)
+  ]);
+
+  const width = Math.max(imgTop.width, imgBottom.width);
+  const height = Math.max(0, imgTop.height + imgBottom.height + gap);
+
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+
+  // Draw top image
+  ctx.drawImage(imgTop, (width - imgTop.width) / 2, 0);
+
+  // Draw bottom image starting after the top image plus the gap
+  ctx.drawImage(imgBottom, (width - imgBottom.width) / 2, imgTop.height + gap);
+
+  const buffer = canvas.toBuffer('image/jpeg', { quality: 0.95 });
+  return `data:image/jpeg;base64,${buffer.toString('base64')}`;
+}
+
+/**
  * Crop and stitch image fragments based on detected bounding boxes
  */
 async function cropAndStitchImage(sourceDataUrl, boxes, originalWidth, originalHeight, settings) {
@@ -322,7 +351,7 @@ async function processPdf(pdfPath, options) {
         detections
       });
 
-      // Crop questions
+      // Crop questions with continuation handling
       for (const detection of detections) {
         console.log(`  ✂️  Cropping question ${detection.id}...`);
         const { final, original } = await cropAndStitchImage(
@@ -334,12 +363,29 @@ async function processPdf(pdfPath, options) {
         );
 
         if (final) {
-          allQuestions.push({
-            id: detection.id,
-            pageNumber: pageNum,
-            dataUrl: final,
-            originalDataUrl: original
-          });
+          // Handle continuation logic: merge with previous question
+          if (detection.id === 'continuation') {
+            if (allQuestions.length > 0) {
+              console.log(`  🔗  Merging continuation with previous question...`);
+              const lastQ = allQuestions[allQuestions.length - 1];
+              const stitchedImg = await mergeBase64Images(lastQ.dataUrl, final, -settings.mergeOverlap);
+              lastQ.dataUrl = stitchedImg;
+              // Also update originalDataUrl if exists
+              if (lastQ.originalDataUrl && original) {
+                lastQ.originalDataUrl = await mergeBase64Images(lastQ.originalDataUrl, original, -settings.mergeOverlap);
+              }
+            } else {
+              console.warn(`  ⚠️  Continuation found but no previous question exists. Skipping.`);
+            }
+          } else {
+            // Normal question: add to list
+            allQuestions.push({
+              id: detection.id,
+              pageNumber: pageNum,
+              dataUrl: final,
+              originalDataUrl: original
+            });
+          }
         }
       }
     } catch (error) {
@@ -407,6 +453,12 @@ program
   .option('--merge-overlap <number>', 'Fragment merge overlap (0-100)', parseFloat, 20)
   .action(async (pdfPath, options) => {
     try {
+      // If output is the default value, generate output path based on PDF path
+      if (options.output === 'output.zip') {
+        const pdfDir = path.dirname(pdfPath);
+        const pdfBaseName = path.basename(pdfPath, path.extname(pdfPath));
+        options.output = path.join(pdfDir, `${pdfBaseName}.zip`);
+      }
       await processPdf(pdfPath, options);
     } catch (error) {
       console.error('\n❌ Error:', error.message);
