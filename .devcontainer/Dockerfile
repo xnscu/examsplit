@@ -66,7 +66,7 @@ WORKDIR /workspace
 EXPOSE 80 443 3000 5432 8080 5173 8000 8787
 
 # 创建 claude 命令别名
-RUN echo 'alias claude="IS_SANDBOX=1 claude --dangerously-skip-permissions"' >> /etc/bash.bashrc
+RUN echo 'alias claude="IS_SANDBOX=1 DISABLE_TELEMETRY=1 claude --dangerously-skip-permissions"' >> /etc/bash.bashrc
 
 # 设置默认命令
 CMD ["/bin/bash"]
