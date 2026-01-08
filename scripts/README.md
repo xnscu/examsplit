@@ -20,30 +20,23 @@ npm install
 - `canvas` - Node.js 图像处理
 - `commander` - CLI 参数解析
 - `pdfjs-dist` - PDF 渲染
-- `openai` - OpenAI SDK（用于调用 Gemini API）
 - `jszip` - ZIP 文件生成
 
-## 配置 API Key
+## API 配置
 
-需要 Gemini API Key（通过 OpenAI 兼容接口调用）。设置环境变量：
-
-```bash
-export GEMINI_API_KEY="your-api-key-here"
-```
-
-或者在命令行中使用 `-k` 参数指定。
+脚本使用 Gemini API 代理，**无需配置 API Key**。
 
 **API 配置：**
-- 接口地址：`https://apikeys.xnscu.com/v1beta`
-- 模型名称：`gemini-flash-latest`
-- 使用 OpenAI SDK 的兼容格式调用
+- 代理地址：`https://gproxy.xnscu.com/api/gemini`
+- 模型名称：`gemini-2.0-flash-exp`
+- 使用原生 fetch API 直接调用，无需 SDK
 
 ## 使用方法
 
 ### 基础用法
 
 ```bash
-# 使用环境变量中的 API Key
+# 直接使用
 node scripts/split-pdf.js exam.pdf
 
 # 或使用 npm script
@@ -54,12 +47,6 @@ npm run split exam.pdf
 
 ```bash
 node scripts/split-pdf.js exam.pdf -o output/result.zip
-```
-
-### 指定 API Key
-
-```bash
-node scripts/split-pdf.js exam.pdf -k YOUR_API_KEY
 ```
 
 ### 完整参数示例
@@ -81,7 +68,6 @@ node scripts/split-pdf.js exam.pdf \
 |------|------|--------|------|
 | `<pdf-path>` | - | 必填 | PDF 文件路径 |
 | `--output` | `-o` | `output.zip` | 输出 ZIP 文件路径 |
-| `--api-key` | `-k` | 从环境变量读取 | Gemini API Key |
 | `--scale` | - | `3.0` | PDF 渲染缩放比例（影响图片质量） |
 | `--crop-padding` | - | `25` | 裁剪边距（0-100 像素） |
 | `--canvas-padding-left` | - | `10` | 左侧内边距（0-100 像素） |
@@ -177,14 +163,7 @@ sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev l
 brew install pkg-config cairo pango libpng jpeg giflib librsvg
 ```
 
-### 2. API Key 错误
-
-确保已正确设置环境变量：
-```bash
-echo $GEMINI_API_KEY
-```
-
-### 3. 内存不足
+### 2. 内存不足
 
 处理大型 PDF 时可能需要增加 Node.js 内存限制：
 ```bash
@@ -197,7 +176,7 @@ NODE_OPTIONS="--max-old-space-size=4096" node scripts/split-pdf.js exam.pdf
 
 1. **PDF 加载** - 使用 pdfjs-dist 加载 PDF
 2. **页面渲染** - 每页渲染为高分辨率 JPEG（3x 缩放）
-3. **AI 识别** - 通过 OpenAI 兼容接口调用 Gemini AI（gemini-flash-latest）分析图片并返回题目边界框
+3. **AI 识别** - 通过 fetch API 直接调用 Gemini API 代理（gemini-2.0-flash-exp）分析图片并返回题目边界框
 4. **智能裁剪** - 根据边界框裁剪，应用"Edge Peel"算法去除边框
 5. **图片拼接** - 处理跨栏题目，合并多个片段
 6. **ZIP 导出** - 打包所有结果到 ZIP 文件
