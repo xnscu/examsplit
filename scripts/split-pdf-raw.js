@@ -12,7 +12,6 @@
 
 import { createCanvas, loadImage, Image } from 'canvas';
 import pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
-import { GoogleGenAI, Type } from '@google/genai';
 import JSZip from 'jszip';
 import fs from 'fs/promises';
 import path from 'path';
@@ -57,20 +56,61 @@ const NodeCanvasImageFactory = class {
 
 // Import shared utilities and AI config
 const { getTrimmedBounds, isContained } = await import('../shared/canvas-utils.js');
-const { PROMPTS, SCHEMAS, MODEL_IDS } = await import('../shared/ai-config.js');
+const { PROMPTS, SCHEMAS } = await import('../shared/ai-config.js');
 
 // Delay utility
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Gemini API proxy configuration
+const GEMINI_PROXY_URL = 'https://gproxy.xnscu.com/api/gemini/v1beta/models/gemini-flash-latest:generateContent';
+
 /**
- * Initialize Gemini AI client
+ * Call Gemini API via proxy (no API key required)
  */
-function initializeAI(apiKey) {
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY environment variable is required');
+async function callGeminiAPI(imageBase64, prompt, schema) {
+  const response = await fetch(GEMINI_PROXY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              inline_data: {
+                mime_type: 'image/jpeg',
+                data: imageBase64
+              }
+            },
+            { text: prompt }
+          ]
+        }
+      ],
+      generationConfig: {
+        response_mime_type: "application/json",
+        response_schema: schema
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API request failed: ${response.status} ${errorText}`);
   }
 
-  return new GoogleGenAI({ apiKey });
+  const data = await response.json();
+
+  if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+    throw new Error('Invalid API response format');
+  }
+
+  const textPart = data.candidates[0].content.parts.find(p => p.text);
+  if (!textPart) {
+    throw new Error('No text content in API response');
+  }
+
+  return JSON.parse(textPart.text);
 }
 
 /**
@@ -95,44 +135,24 @@ async function renderPageToImage(page, scale = 3) {
 }
 
 /**
- * Detect questions on a page using Gemini AI
+ * Detect questions on a page using Gemini API proxy
  */
-async function detectQuestionsOnPage(ai, image, modelId = MODEL_IDS.FLASH, maxRetries = 5) {
+async function detectQuestionsOnPage(image, maxRetries = 5) {
   let attempt = 0;
+  const imageBase64 = image.split(',')[1]; // Remove data:image/jpeg;base64, prefix
 
   while (attempt < maxRetries) {
     try {
-      const response = await ai.models.generateContent({
-        model: modelId,
-        contents: [
-          {
-            parts: [
-              {
-                inlineData: {
-                  mimeType: 'image/jpeg',
-                  data: image.split(',')[1]
-                }
-              },
-              { text: PROMPTS.BASIC }
-            ]
-          }
-        ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: SCHEMAS.BASIC
-          }
-        }
+      const result = await callGeminiAPI(imageBase64, PROMPTS.BASIC, {
+        type: 'ARRAY',
+        items: SCHEMAS.BASIC
       });
 
-      const text = response.text;
-      if (!text) throw new Error("Empty response from AI");
+      if (!Array.isArray(result)) {
+        throw new Error("Invalid response format: Expected Array");
+      }
 
-      const parsed = JSON.parse(text);
-      if (!Array.isArray(parsed)) throw new Error("Invalid response format: Expected Array");
-
-      return parsed;
+      return result;
     } catch (error) {
       attempt++;
       const isRateLimit = error?.message?.includes('429') || error?.status === 429;
@@ -304,10 +324,6 @@ async function cropAndStitchImage(sourceDataUrl, boxes, originalWidth, originalH
 async function processPdf(pdfPath, options) {
   console.log('📄 Loading PDF:', pdfPath);
 
-  // Initialize API
-  const apiKey = options.apiKey || process.env.GEMINI_API_KEY;
-  const ai = initializeAI(apiKey);
-
   // Crop settings
   const settings = {
     cropPadding: options.cropPadding,
@@ -323,7 +339,7 @@ async function processPdf(pdfPath, options) {
   const totalPages = pdf.numPages;
 
   console.log(`📊 Total pages: ${totalPages}`);
-  console.log(`🤖 Using model: ${MODEL_IDS.FLASH}`);
+  console.log(`🤖 Using Gemini API proxy (no key required)`);
 
   // Process pages
   const allQuestions = [];
@@ -339,7 +355,7 @@ async function processPdf(pdfPath, options) {
 
       // Detect questions
       console.log('  🔍 Detecting questions with AI...');
-      const detections = await detectQuestionsOnPage(ai, dataUrl);
+      const detections = await detectQuestionsOnPage(dataUrl);
       console.log(`  ✅ Found ${detections.length} questions`);
 
       // Store debug data
@@ -444,7 +460,6 @@ program
   .description('Extract individual questions from math exam PDFs using AI')
   .argument('<pdf-path>', 'Path to the PDF file')
   .option('-o, --output <path>', 'Output ZIP file path', 'output.zip')
-  .option('-k, --api-key <key>', 'Gemini API key (or use GEMINI_API_KEY env var)')
   .option('--scale <number>', 'PDF rendering scale', parseFloat, 3.0)
   .option('--crop-padding <number>', 'Crop padding in pixels (0-100)', parseFloat, 25)
   .option('--canvas-padding-left <number>', 'Left padding (0-100)', parseFloat, 10)
