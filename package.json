@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "split": "node scripts/split-pdf.js"
+    "split2": "dotenv run node scripts/split-pdf.js test/exam.pdf",
+    "split": "node scripts/split-pdf-raw.js test/exam.pdf"
   },
   "dependencies": {
     "react": "^19.2.3",

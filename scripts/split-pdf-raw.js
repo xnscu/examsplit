@@ -62,7 +62,7 @@ const { PROMPTS, SCHEMAS } = await import('../shared/ai-config.js');
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Gemini API proxy configuration
-const GEMINI_PROXY_URL = 'https://gproxy.xnscu.com/api/gemini/v1beta/models/gemini-flash-latest:generateContent';
+const GEMINI_PROXY_URL = 'https://gproxy.xnscu.com/api/gemini/v1beta/models/gemini-3-flash-preview:generateContent';
 
 /**
  * Call Gemini API via proxy (no API key required)
