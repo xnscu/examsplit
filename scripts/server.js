@@ -149,7 +149,7 @@ async function generateDashboard(inputDir, outputDir) {
   const filesHtml = files.length > 0
     ? files.map(f => `
         <tr>
-          <td><a href="/files/${encodeURIComponent(f.name)}" download>${f.name}</a></td>
+          <td><a href="#" class="file-link" data-filename="${encodeURIComponent(f.name)}" target="_blank">${f.name}</a></td>
           <td>${f.sizeFormatted}</td>
           <td>${f.mtimeFormatted}</td>
         </tr>
@@ -454,6 +454,17 @@ async function generateDashboard(inputDir, outputDir) {
     <span class="pulse"></span>
     自动刷新中 (10秒)
   </div>
+
+  <script>
+    (function() {
+      const host = window.location.host;
+      const links = document.querySelectorAll('a.file-link');
+      links.forEach(link => {
+        const filename = link.getAttribute('data-filename');
+        link.href = 'https://pdfsplit.xnscu.com?zip=https://' + host + '/files/' + filename;
+      });
+    })();
+  </script>
 </body>
 </html>`;
 }
