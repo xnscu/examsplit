@@ -9,7 +9,7 @@
     "cli": "node scripts/cli.js",
     "batch": "node scripts/batch-process.js",
     "serve": "node scripts/server.js",
-    "pm2:start": "pm2 start ecosystem.config.js --only exam-batch",
+    "pm2:start": "pm2 start ecosystem.config.cjs --only exam-batch",
     "pm2:stop": "pm2 stop exam-batch",
     "pm2:restart": "pm2 restart exam-batch",
     "pm2:delete": "pm2 delete exam-batch",

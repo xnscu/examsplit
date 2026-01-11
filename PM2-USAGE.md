@@ -18,7 +18,7 @@ mkdir -p logs
 
 ```bash
 # 方法1：使用配置文件
-pm2 start ecosystem.config.js --only exam-batch
+pm2 start ecosystem.config.cjs --only exam-batch
 
 # 方法2：使用便捷脚本
 ./pm2-commands.sh start
@@ -88,19 +88,19 @@ pm2 monit
 ### 修改并发数和重试次数
 
 ```bash
-pm2 start ecosystem.config.js --only exam-batch -- --concurrency 10 --retries 5
+pm2 start ecosystem.config.cjs --only exam-batch -- --concurrency 10 --retries 5
 ```
 
 ### 强制重新处理所有文件
 
 ```bash
-pm2 start ecosystem.config.js --only exam-batch -- --force
+pm2 start ecosystem.config.cjs --only exam-batch -- --force
 ```
 
 ### 指定输入输出目录
 
 ```bash
-pm2 start ecosystem.config.js --only exam-batch -- --input /path/to/exams --output /path/to/output
+pm2 start ecosystem.config.cjs --only exam-batch -- --input /path/to/exams --output /path/to/output
 ```
 
 ## 日志管理
@@ -136,7 +136,7 @@ pm2 flush
 pm2 startup
 
 # 2. 启动你的任务
-pm2 start ecosystem.config.js --only exam-batch
+pm2 start ecosystem.config.cjs --only exam-batch
 
 # 3. 保存当前任务列表
 pm2 save
@@ -173,7 +173,7 @@ pm2 unstartup
 
 ### 任务一直重启
 
-检查 `ecosystem.config.js` 中的 `autorestart` 设置：
+检查 `ecosystem.config.cjs` 中的 `autorestart` 设置：
 
 - 批处理任务应该是 `autorestart: false`
 - 服务器应该是 `autorestart: true`
@@ -211,7 +211,7 @@ pm2 delete all
 pm2 flush
 
 # 重新启动
-pm2 start ecosystem.config.js --only exam-batch
+pm2 start ecosystem.config.cjs --only exam-batch
 ```
 
 ## 多个任务管理
@@ -223,13 +223,13 @@ pm2 start ecosystem.config.js --only exam-batch
 
 ```bash
 # 只启动批处理
-pm2 start ecosystem.config.js --only exam-batch
+pm2 start ecosystem.config.cjs --only exam-batch
 
 # 只启动服务器
-pm2 start ecosystem.config.js --only exam-server
+pm2 start ecosystem.config.cjs --only exam-server
 
 # 启动所有任务
-pm2 start ecosystem.config.js
+pm2 start ecosystem.config.cjs
 
 # 查看所有任务状态
 pm2 status
@@ -250,7 +250,7 @@ ssh web@foo.com
 cd ~/examsplit
 
 # 启动任务
-pm2 start ecosystem.config.js --only exam-batch
+pm2 start ecosystem.config.cjs --only exam-batch
 
 # 断开 SSH（任务继续运行）
 exit
@@ -277,10 +277,10 @@ tail -f ~/examsplit/logs/batch-output.log
 
 ```bash
 # CPU 核心数较多时
-pm2 start ecosystem.config.js --only exam-batch -- --concurrency 10
+pm2 start ecosystem.config.cjs --only exam-batch -- --concurrency 10
 
 # 内存较小时
-pm2 start ecosystem.config.js --only exam-batch -- --concurrency 3
+pm2 start ecosystem.config.cjs --only exam-batch -- --concurrency 3
 ```
 
 ### 监控资源使用
@@ -301,7 +301,7 @@ pm2 info exam-batch | grep memory
 
 ```bash
 # 启动
-pm2 start ecosystem.config.js --only exam-batch
+pm2 start ecosystem.config.cjs --only exam-batch
 
 # 查看进度
 pm2 logs exam-batch

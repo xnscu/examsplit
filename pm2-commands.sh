@@ -7,14 +7,14 @@ case "$1" in
   # 启动批处理任务
   "start")
     echo "🚀 启动批处理任务..."
-    pm2 start ecosystem.config.js --only exam-batch
+    pm2 start ecosystem.config.cjs --only exam-batch
     ;;
 
   # 启动批处理任务（自定义参数）
   "start-custom")
     echo "🚀 启动批处理任务（自定义参数）..."
     shift
-    pm2 start ecosystem.config.js --only exam-batch -- "$@"
+    pm2 start ecosystem.config.cjs --only exam-batch -- "$@"
     ;;
 
   # 查看状态
@@ -69,7 +69,7 @@ case "$1" in
   # 启动服务器
   "serve")
     echo "🌐 启动 Web 服务器..."
-    pm2 start ecosystem.config.js --only exam-server
+    pm2 start ecosystem.config.cjs --only exam-server
     ;;
 
   # 停止所有
@@ -109,7 +109,7 @@ case "$1" in
     echo "  ./pm2-commands.sh start-custom --concurrency 10 --force"
     echo ""
     echo "或直接使用 PM2 命令:"
-    echo "  pm2 start ecosystem.config.js --only exam-batch"
+    echo "  pm2 start ecosystem.config.cjs --only exam-batch"
     echo "  pm2 logs exam-batch"
     echo "  pm2 stop exam-batch"
     ;;

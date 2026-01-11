@@ -12,7 +12,7 @@ npm install -g pm2
 
 ```bash
 cd ~/examsplit
-pm2 start ecosystem.config.js --only exam-batch
+pm2 start ecosystem.config.cjs --only exam-batch
 ```
 
 ### 3️⃣ 查看运行状态和日志
@@ -86,13 +86,13 @@ pnpm pm2:delete
 ### 增加并发数（处理更快）
 
 ```bash
-pm2 start ecosystem.config.js --only exam-batch -- --concurrency 10
+pm2 start ecosystem.config.cjs --only exam-batch -- --concurrency 10
 ```
 
 ### 强制重新处理所有文件
 
 ```bash
-pm2 start ecosystem.config.js --only exam-batch -- --force
+pm2 start ecosystem.config.cjs --only exam-batch -- --force
 ```
 
 ---
@@ -107,7 +107,7 @@ ssh web@foo.com
 cd ~/examsplit
 
 # 3. 启动批处理（10个并发）
-pm2 start ecosystem.config.js --only exam-batch -- --concurrency 10
+pm2 start ecosystem.config.cjs --only exam-batch -- --concurrency 10
 
 # 4. 查看日志确认启动成功
 pm2 logs exam-batch --lines 20
