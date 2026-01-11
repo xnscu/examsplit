@@ -186,40 +186,6 @@ async function main(options) {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
 
-  // Get all PDF files
-  const allPdfFiles = await getPdfFiles(inputDir);
-  console.log(`\n📊 Found ${allPdfFiles.length} PDF files in total`);
-
-  if (allPdfFiles.length === 0) {
-    console.log('⚠️ No PDF files found. Exiting.');
-    return;
-  }
-
-  // Load state for resume support
-  const state = await loadState();
-
-  // Filter out already processed files (unless --force)
-  let pdfFiles = allPdfFiles;
-  if (!options.force) {
-    const pendingFiles = [];
-    for (const pdfPath of allPdfFiles) {
-      const processed = await isProcessed(pdfPath, outputDir);
-      if (!processed) {
-        pendingFiles.push(pdfPath);
-      } else {
-        console.log(`⏭️ Skipping (already exists): ${path.basename(pdfPath)}`);
-      }
-    }
-    pdfFiles = pendingFiles;
-  }
-
-  console.log(`\n📋 Files to process: ${pdfFiles.length}`);
-
-  if (pdfFiles.length === 0) {
-    console.log('✨ All files already processed!');
-    return;
-  }
-
   // Handle interruption
   let interrupted = false;
   process.on('SIGINT', () => {
@@ -232,44 +198,132 @@ async function main(options) {
     console.log('💾 Current progress has been saved. Run again to resume.');
   });
 
-  // Start processing
-  console.log('\n🚀 Starting batch processing...\n');
-  const startTime = Date.now();
+  // Auto-retry loop
+  let roundNumber = 1;
+  let previousFailedCount = -1;
+  const maxRounds = 10; // 防止无限循环
+  const totalStartTime = Date.now();
+  let allSuccessful = [];
 
-  const results = await processBatch(
-    pdfFiles,
-    outputDir,
-    options.concurrency,
-    options.retries,
-    state
-  );
+  while (roundNumber <= maxRounds && !interrupted) {
+    console.log('\n' + '='.repeat(50));
+    console.log(`🔄 Round ${roundNumber}`);
+    console.log('='.repeat(50));
 
-  const duration = ((Date.now() - startTime) / 1000 / 60).toFixed(2);
+    // Get all PDF files
+    const allPdfFiles = await getPdfFiles(inputDir);
+    console.log(`\n📊 Found ${allPdfFiles.length} PDF files in total`);
 
-  // Summary
+    if (allPdfFiles.length === 0) {
+      console.log('⚠️ No PDF files found. Exiting.');
+      return;
+    }
+
+    // Load state for resume support
+    const state = await loadState();
+
+    // Filter out already processed files (unless --force)
+    let pdfFiles = allPdfFiles;
+    if (!options.force) {
+      const pendingFiles = [];
+      for (const pdfPath of allPdfFiles) {
+        const processed = await isProcessed(pdfPath, outputDir);
+        if (!processed) {
+          pendingFiles.push(pdfPath);
+        } else if (roundNumber === 1) {
+          console.log(`⏭️ Skipping (already exists): ${path.basename(pdfPath)}`);
+        }
+      }
+      pdfFiles = pendingFiles;
+    }
+
+    console.log(`\n📋 Files to process: ${pdfFiles.length}`);
+
+    if (pdfFiles.length === 0) {
+      console.log('✨ All files already processed!');
+      break;
+    }
+
+    // Start processing
+    console.log('\n🚀 Starting batch processing...\n');
+    const roundStartTime = Date.now();
+
+    const results = await processBatch(
+      pdfFiles,
+      outputDir,
+      options.concurrency,
+      options.retries,
+      state
+    );
+
+    const duration = ((Date.now() - roundStartTime) / 1000 / 60).toFixed(2);
+
+    // Keep track of all successful files
+    allSuccessful.push(...results.success);
+
+    // Summary
+    console.log('\n' + '='.repeat(50));
+    console.log(`📊 Round ${roundNumber} Summary`);
+    console.log('='.repeat(50));
+    console.log(`⏱️ Round time: ${duration} minutes`);
+    console.log(`✅ Successful: ${results.success.length}`);
+    console.log(`❌ Failed: ${results.failed.length}`);
+
+    if (results.failed.length > 0) {
+      console.log('\n❌ Failed files:');
+      for (const item of results.failed) {
+        console.log(`   - ${path.basename(item.path)}: ${item.error}`);
+      }
+
+      // Check if we're stuck (same number of failures as previous round)
+      if (results.failed.length === previousFailedCount) {
+        console.log('\n⚠️ No progress made. Same files keep failing.');
+        console.log('💡 These files may have persistent issues. Stopping auto-retry.');
+        break;
+      }
+
+      previousFailedCount = results.failed.length;
+
+      // Check if interrupted
+      if (interrupted) {
+        console.log('\n⏸️ Process interrupted. Stopping auto-retry.');
+        break;
+      }
+
+      // Continue to next round
+      console.log(`\n🔄 ${results.failed.length} files failed. Starting next round...\n`);
+      roundNumber++;
+
+      // Add a small delay before next round
+      await new Promise(r => setTimeout(r, 2000));
+    } else {
+      // All successful!
+      console.log('\n🎉 All files processed successfully!');
+
+      // Clean up state file
+      try {
+        await fs.unlink(STATE_FILE);
+      } catch {
+        // Ignore if file doesn't exist
+      }
+      break;
+    }
+
+    // Safety check for max rounds
+    if (roundNumber > maxRounds) {
+      console.log(`\n⚠️ Reached maximum rounds (${maxRounds}). Stopping.`);
+      break;
+    }
+  }
+
+  // Final summary
+  const totalDuration = ((Date.now() - totalStartTime) / 1000 / 60).toFixed(2);
   console.log('\n' + '='.repeat(50));
-  console.log('📊 Batch Processing Summary');
+  console.log('🏁 Final Summary');
   console.log('='.repeat(50));
-  console.log(`⏱️ Total time: ${duration} minutes`);
-  console.log(`✅ Successful: ${results.success.length}`);
-  console.log(`❌ Failed: ${results.failed.length}`);
-
-  if (results.failed.length > 0) {
-    console.log('\n❌ Failed files:');
-    for (const item of results.failed) {
-      console.log(`   - ${path.basename(item.path)}: ${item.error}`);
-    }
-    console.log('\n💡 Run the command again to retry failed files.');
-  }
-
-  // Clean up state file if all successful
-  if (results.failed.length === 0) {
-    try {
-      await fs.unlink(STATE_FILE);
-    } catch {
-      // Ignore if file doesn't exist
-    }
-  }
+  console.log(`⏱️ Total time: ${totalDuration} minutes`);
+  console.log(`🔄 Total rounds: ${roundNumber}`);
+  console.log(`✅ Total successful: ${allSuccessful.length}`);
 }
 
 // CLI setup
