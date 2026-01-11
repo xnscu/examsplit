@@ -1,13 +1,8 @@
-#!/usr/bin/env node
-
 /**
- * Math Exam PDF Question Splitter - Node.js CLI Version
+ * Math Exam PDF Question Splitter - Core Processing Module
  *
- * Usage:
- *   node scripts/split-pdf.js <pdf-path> [options]
- *
- * Example:
- *   node scripts/split-pdf.js exam.pdf -o output.zip --crop-padding 25
+ * This module exports the main PDF processing function.
+ * For CLI usage, see cli.js
  */
 
 import { createCanvas, loadImage, Image } from 'canvas';
@@ -15,7 +10,9 @@ import pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 import JSZip from 'jszip';
 import fs from 'fs/promises';
 import path from 'path';
-import { program } from 'commander';
+// Import shared utilities and AI config
+import { getTrimmedBounds, isContained } from './canvas-utils.js';
+import { PROMPTS, SCHEMAS } from './ai-config.js';
 
 // Set globals for pdfjs
 if (typeof global !== 'undefined') {
@@ -54,9 +51,7 @@ const NodeCanvasImageFactory = class {
   }
 };
 
-// Import shared utilities and AI config
-const { getTrimmedBounds, isContained } = await import('../shared/canvas-utils.js');
-const { PROMPTS, SCHEMAS } = await import('../shared/ai-config.js');
+
 
 // Delay utility
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -72,6 +67,7 @@ async function callGeminiAPI(imageBase64, prompt, schema) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      // 'Authorization':'Bearer '+process.env.GEMINI_API_KEY
     },
     body: JSON.stringify({
       contents: [
@@ -454,31 +450,16 @@ async function processPdf(pdfPath, options) {
   console.log(`   - ZIP size: ${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB`);
 }
 
-// CLI setup
-program
-  .name('split-pdf')
-  .description('Extract individual questions from math exam PDFs using AI')
-  .argument('<pdf-path>', 'Path to the PDF file')
-  .option('-o, --output <path>', 'Output ZIP file path', 'output.zip')
-  .option('--scale <number>', 'PDF rendering scale', parseFloat, 3.0)
-  .option('--crop-padding <number>', 'Crop padding in pixels (0-100)', parseFloat, 25)
-  .option('--canvas-padding-left <number>', 'Left padding (0-100)', parseFloat, 10)
-  .option('--canvas-padding-right <number>', 'Right padding (0-100)', parseFloat, 10)
-  .option('--canvas-padding-y <number>', 'Top/bottom padding (0-100)', parseFloat, 10)
-  .option('--merge-overlap <number>', 'Fragment merge overlap (0-100)', parseFloat, 20)
-  .action(async (pdfPath, options) => {
-    try {
-      // If output is the default value, generate output path based on PDF path
-      if (options.output === 'output.zip') {
-        const pdfDir = path.dirname(pdfPath);
-        const pdfBaseName = path.basename(pdfPath, path.extname(pdfPath));
-        options.output = path.join(pdfDir, `${pdfBaseName}.zip`);
-      }
-      await processPdf(pdfPath, options);
-    } catch (error) {
-      console.error('\n❌ Error:', error.message);
-      process.exit(1);
-    }
-  });
+// Default options
+export const DEFAULT_OPTIONS = {
+  output: 'output.zip',
+  scale: 3.0,
+  cropPadding: 25,
+  canvasPaddingLeft: 10,
+  canvasPaddingRight: 10,
+  canvasPaddingY: 10,
+  mergeOverlap: 20
+};
 
-program.parse();
+// Export the main processing function
+export { processPdf };
