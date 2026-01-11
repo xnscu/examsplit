@@ -13,6 +13,7 @@ import path from 'path';
 // Import shared utilities and AI config
 import { getTrimmedBounds, isContained } from './canvas-utils.js';
 import { PROMPTS, SCHEMAS } from './ai-config.js';
+import { createLogger } from './logger.js';
 
 // Set globals for pdfjs
 if (typeof global !== 'undefined') {
@@ -133,11 +134,12 @@ async function renderPageToImage(page, scale = 3) {
 /**
  * Detect questions on a page using Gemini API proxy
  */
-async function detectQuestionsOnPage(image, maxRetries = 5) {
+async function detectQuestionsOnPage(image, pageNumber, logger, maxRetries = 5) {
   let attempt = 0;
   const imageBase64 = image.split(',')[1]; // Remove data:image/jpeg;base64, prefix
 
   while (attempt < maxRetries) {
+    const startTime = Date.now();
     try {
       const result = await callGeminiAPI(imageBase64, PROMPTS.BASIC, {
         type: 'ARRAY',
@@ -148,11 +150,23 @@ async function detectQuestionsOnPage(image, maxRetries = 5) {
         throw new Error("Invalid response format: Expected Array");
       }
 
+      const duration = Date.now() - startTime;
+      // Log success
+      if (logger) {
+        await logger.logSuccess(pageNumber, result.length, duration, attempt + 1);
+      }
+
       return result;
     } catch (error) {
       attempt++;
+      const duration = Date.now() - startTime;
       const isRateLimit = error?.message?.includes('429') || error?.status === 429;
       const waitTime = isRateLimit ? Math.pow(2, attempt) * 1000 : 2000;
+
+      // Log failure
+      if (logger) {
+        await logger.logFailure(pageNumber, error, duration, attempt);
+      }
 
       console.warn(`Gemini detection attempt ${attempt} failed: ${error.message}. Retrying in ${waitTime}ms...`);
 
@@ -320,6 +334,9 @@ async function cropAndStitchImage(sourceDataUrl, boxes, originalWidth, originalH
 async function processPdf(pdfPath, options) {
   console.log('📄 Loading PDF:', pdfPath);
 
+  // Create logger for this PDF
+  const logger = createLogger(pdfPath);
+
   // Crop settings
   const settings = {
     cropPadding: options.cropPadding,
@@ -351,7 +368,7 @@ async function processPdf(pdfPath, options) {
 
       // Detect questions
       console.log('  🔍 Detecting questions with AI...');
-      const detections = await detectQuestionsOnPage(dataUrl);
+      const detections = await detectQuestionsOnPage(dataUrl, pageNum, logger);
       console.log(`  ✅ Found ${detections.length} questions`);
 
       // Store debug data

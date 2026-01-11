@@ -19,6 +19,7 @@ import fs from 'fs/promises';
 import { createReadStream, statSync } from 'fs';
 import path from 'path';
 import { program } from 'commander';
+import { getLogs, getLogStats, clearLogs } from './logger.js';
 
 /**
  * Get MIME type for file extension
@@ -128,6 +129,315 @@ async function getOutputFiles(outputDir) {
   } catch {
     return [];
   }
+}
+
+/**
+ * Generate HTML for logs page
+ */
+async function generateLogsPage() {
+  const stats = await getLogStats();
+  const logs = await getLogs(200);
+
+  const successRate = stats.total > 0
+    ? Math.round((stats.success / stats.total) * 100)
+    : 0;
+
+  const logsHtml = logs.entries.length > 0
+    ? logs.entries.map(e => `
+        <tr class="${e.success ? 'success' : 'error'}">
+          <td>${new Date(e.timestamp).toLocaleString('zh-CN')}</td>
+          <td>${e.pdfFile}</td>
+          <td>P${e.pageNumber}</td>
+          <td><span class="status ${e.success ? 'ok' : 'fail'}">${e.success ? '✅ 成功' : '❌ 失败'}</span></td>
+          <td>${e.success ? `${e.questionsFound} 题` : e.error}</td>
+          <td>${e.duration}ms</td>
+          <td>${e.attempt}</td>
+        </tr>
+      `).join('')
+    : '<tr><td colspan="7" style="text-align: center; color: #666;">暂无日志</td></tr>';
+
+  const byPdfHtml = stats.byPdf && stats.byPdf.length > 0
+    ? stats.byPdf.map(p => `
+        <div class="pdf-stat">
+          <span class="pdf-name">${p.name}</span>
+          <span class="pdf-counts">
+            <span class="count success">${p.success}✓</span>
+            <span class="count failed">${p.failed}✗</span>
+          </span>
+        </div>
+      `).join('')
+    : '<p style="color: #666;">暂无数据</p>';
+
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="5">
+  <title>Gemini API 日志 - ExamSplit</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+      padding: 2rem;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      color: #ff9f43;
+      font-size: 2rem;
+      text-shadow: 0 0 20px rgba(255, 159, 67, 0.3);
+    }
+
+    .nav-link {
+      color: #00d4ff;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border: 1px solid #00d4ff;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+      background: #00d4ff;
+      color: #0f0f23;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value.success { color: #00ff88; }
+    .stat-value.failed { color: #ff6b6b; }
+    .stat-value.total { color: #00d4ff; }
+    .stat-value.rate { color: #ff9f43; }
+
+    .stat-label { color: #888; font-size: 0.875rem; }
+
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .card-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-header h2 { font-size: 1rem; color: #fff; }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .btn-danger {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+      border: 1px solid rgba(255, 107, 107, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th, td { padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; }
+
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      color: #888;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.7rem;
+    }
+
+    td { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+
+    tr.error td { background: rgba(255, 107, 107, 0.05); }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .status {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .status.ok { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+    .status.fail { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+
+    .pdf-stats { padding: 1rem 1.5rem; }
+
+    .pdf-stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .pdf-name { color: #ccc; font-size: 0.8rem; }
+
+    .pdf-counts { display: flex; gap: 0.5rem; }
+
+    .count {
+      font-size: 0.75rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+    }
+
+    .count.success { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+    .count.failed { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+
+    .auto-refresh {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      font-size: 0.75rem;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      background: #ff9f43;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .scrollable { max-height: 500px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📋 Gemini API 日志</h1>
+      <a href="/" class="nav-link">← 返回进度</a>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value total">${stats.total}</div>
+        <div class="stat-label">总调用次数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value success">${stats.success}</div>
+        <div class="stat-label">成功</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value failed">${stats.failed}</div>
+        <div class="stat-label">失败</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value rate">${successRate}%</div>
+        <div class="stat-label">成功率</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color: #a78bfa;">${stats.avgDuration}ms</div>
+        <div class="stat-label">平均耗时</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>📊 按文件统计</h2>
+      </div>
+      <div class="pdf-stats">
+        ${byPdfHtml}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>📜 调用记录 (最近 ${logs.entries.length} 条)</h2>
+        <button class="btn btn-danger" onclick="clearLogs()">清空日志</button>
+      </div>
+      <div class="scrollable">
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>文件</th>
+              <th>页码</th>
+              <th>状态</th>
+              <th>结果</th>
+              <th>耗时</th>
+              <th>次数</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logsHtml}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="auto-refresh">
+    <span class="pulse"></span>
+    自动刷新中 (5秒)
+  </div>
+
+  <script>
+    async function clearLogs() {
+      if (!confirm('确定要清空所有日志吗？')) return;
+      await fetch('/api/logs/clear', { method: 'POST' });
+      location.reload();
+    }
+  </script>
+</body>
+</html>`;
 }
 
 /**
@@ -446,7 +756,9 @@ async function generateDashboard(inputDir, outputDir) {
       <strong>📡 API 端点:</strong><br>
       <code>GET /api/progress</code> - 获取进度 JSON<br>
       <code>GET /api/files</code> - 获取文件列表 JSON<br>
-      <code>GET /files/{filename}</code> - 下载文件
+      <code>GET /api/logs</code> - 获取 Gemini 调用日志<br>
+      <code>GET /files/{filename}</code> - 下载文件<br><br>
+      <a href="/logs" style="color: #ff9f43;">📋 查看 Gemini API 调用日志 →</a>
     </div>
   </div>
 
@@ -502,6 +814,49 @@ function createServer(options) {
         return;
       }
 
+      // Logs API
+      if (pathname === '/api/logs') {
+        const limit = parseInt(url.searchParams.get('limit') || '100');
+        const successFilter = url.searchParams.get('success');
+        const pdfFilter = url.searchParams.get('pdf');
+
+        const filter = {};
+        if (successFilter !== null) {
+          filter.success = successFilter === 'true';
+        }
+        if (pdfFilter) {
+          filter.pdfFile = pdfFilter;
+        }
+
+        const logs = await getLogs(limit, filter);
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(JSON.stringify(logs));
+        return;
+      }
+
+      if (pathname === '/api/logs/stats') {
+        const stats = await getLogStats();
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(JSON.stringify(stats));
+        return;
+      }
+
+      if (pathname === '/api/logs/clear' && req.method === 'POST') {
+        await clearLogs();
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(JSON.stringify({ success: true }));
+        return;
+      }
+
       // File download
       if (pathname.startsWith('/files/')) {
         const filename = pathname.slice(7);
@@ -537,6 +892,14 @@ function createServer(options) {
       // Dashboard
       if (pathname === '/' || pathname === '/index.html') {
         const html = await generateDashboard(inputDir, outputDir);
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html);
+        return;
+      }
+
+      // Logs page
+      if (pathname === '/logs' || pathname === '/logs.html') {
+        const html = await generateLogsPage();
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
         return;
