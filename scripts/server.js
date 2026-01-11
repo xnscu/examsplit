@@ -923,19 +923,36 @@ program
   .name('server')
   .description('Serve output folder with progress dashboard')
   .option('-p, --port <number>', 'Port to listen on', parseInt, 3000)
+  .option('-H, --host <address>', 'Host to bind to (use 0.0.0.0 for external access)', '127.0.0.1')
   .option('-o, --output <path>', 'Output folder path', 'output')
   .option('-i, --input <path>', 'Input folder path', 'exams')
   .action(async (options) => {
     const server = createServer(options);
+    const host = options.host;
 
-    server.listen(options.port, () => {
+    server.listen(options.port, host, () => {
+      const isExternalAccess = host === '0.0.0.0' || host === '::';
+
       console.log('🚀 PDF Output Server Started');
       console.log('━'.repeat(40));
       console.log(`📁 Input:  ${path.resolve(options.input)}`);
       console.log(`📁 Output: ${path.resolve(options.output)}`);
       console.log('━'.repeat(40));
-      console.log(`🌐 Dashboard: http://localhost:${options.port}`);
-      console.log(`📡 API:       http://localhost:${options.port}/api/progress`);
+
+      if (isExternalAccess) {
+        console.log(`🌐 Dashboard: http://<your-server-ip>:${options.port}`);
+        console.log(`📡 API:       http://<your-server-ip>:${options.port}/api/progress`);
+        console.log('━'.repeat(40));
+        console.log(`⚠️  Server is accessible from external network`);
+        console.log(`   Make sure port ${options.port} is open in your firewall`);
+      } else {
+        console.log(`🌐 Dashboard: http://${host === '127.0.0.1' ? 'localhost' : host}:${options.port}`);
+        console.log(`📡 API:       http://${host === '127.0.0.1' ? 'localhost' : host}:${options.port}/api/progress`);
+        console.log('━'.repeat(40));
+        console.log(`ℹ️  Server is only accessible locally`);
+        console.log(`   Use -H 0.0.0.0 for external access`);
+      }
+
       console.log('━'.repeat(40));
       console.log('Press Ctrl+C to stop');
     });

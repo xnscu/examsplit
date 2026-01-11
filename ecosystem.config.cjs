@@ -35,7 +35,14 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3000
-      }
+      },
+      // 服务器的默认参数（可以被命令行覆盖）
+      args: [
+        '--port', '3000',
+        '--host', '0.0.0.0',  // 允许外部访问
+        '--input', 'exams',
+        '--output', 'output'
+      ]
     }
   ]
 };

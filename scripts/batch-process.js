@@ -330,8 +330,8 @@ async function main(options) {
 program
   .name('batch-process')
   .description('Batch process PDF files with concurrency and retry support')
-  .option('-c, --concurrency <number>', 'Concurrent processing limit', parseInt, 5)
-  .option('-r, --retries <number>', 'Max retries on failure', parseInt, 3)
+  .option('-c, --concurrency <number>', 'Concurrent processing limit', (val) => parseInt(val, 10), 5)
+  .option('-r, --retries <number>', 'Max retries on failure', (val) => parseInt(val, 10), 3)
   .option('-i, --input <path>', 'Input folder path', 'exams')
   .option('-o, --output <path>', 'Output folder path', 'output')
   .option('--force', 'Reprocess existing files', false)
