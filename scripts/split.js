@@ -58,7 +58,7 @@ const NodeCanvasImageFactory = class {
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Gemini API proxy configuration
-const GEMINI_PROXY_URL = 'https://gproxy.xnscu.com/api/gemini/v1beta/models/gemini-3-flash-preview:generateContent';
+const GEMINI_PROXY_URL = 'https://gproxy.xnscu.com/v1beta/models/gemini-3-flash-preview:generateContent';
 
 /**
  * Call Gemini API via proxy (no API key required)
@@ -383,9 +383,10 @@ async function processPdf(pdfPath, options) {
       // Crop questions with continuation handling
       for (const detection of detections) {
         console.log(`  ✂️  Cropping question ${detection.id}...`);
+        // boxes_2d is now a single array [ymin, xmin, ymax, xmax], wrap it in array for cropAndStitchImage
         const { final, original } = await cropAndStitchImage(
           dataUrl,
-          detection.boxes_2d,
+          [detection.boxes_2d],
           width,
           height,
           settings
@@ -429,8 +430,14 @@ async function processPdf(pdfPath, options) {
   console.log('📦 Creating ZIP archive...');
   const zip = new JSZip();
 
-  // Add metadata
-  zip.file('analysis_data.json', JSON.stringify(debugData, null, 2));
+  // Add metadata (remove dataUrl to reduce file size)
+  const debugDataWithoutImages = debugData.map(page => ({
+    pageNumber: page.pageNumber,
+    width: page.width,
+    height: page.height,
+    detections: page.detections
+  }));
+  zip.file('analysis_data.json', JSON.stringify(debugDataWithoutImages, null, 2));
 
   // Add full pages
   const pagesFolder = zip.folder('full_pages');
