@@ -136,7 +136,7 @@ async function getOutputFiles(outputDir) {
  */
 async function generateLogsPage() {
   const stats = await getLogStats();
-  const logs = await getLogs(200);
+  const logs = await getLogs(200); // 只获取最近200条明细，但stats是基于全部日志
 
   const successRate = stats.total > 0
     ? Math.round((stats.success / stats.total) * 100)
@@ -357,6 +357,20 @@ async function generateLogsPage() {
     }
 
     .scrollable { max-height: 500px; overflow-y: auto; }
+
+    .info-box {
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+      color: #00d4ff;
+    }
+
+    .info-box strong {
+      color: #00ff88;
+    }
   </style>
 </head>
 <body>
@@ -366,32 +380,36 @@ async function generateLogsPage() {
       <a href="/" class="nav-link">← 返回进度</a>
     </div>
 
+    <div class="info-box">
+      <strong>ℹ️ 说明：</strong> 下方所有<strong>统计信息</strong>均基于<strong>全部日志记录</strong>计算，而<strong>调用记录明细</strong>仅显示最近部分记录以提升页面性能。
+    </div>
+
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-value total">${stats.total}</div>
-        <div class="stat-label">总调用次数</div>
+        <div class="stat-label">总调用次数 (全部)</div>
       </div>
       <div class="stat-card">
         <div class="stat-value success">${stats.success}</div>
-        <div class="stat-label">成功</div>
+        <div class="stat-label">成功 (全部)</div>
       </div>
       <div class="stat-card">
         <div class="stat-value failed">${stats.failed}</div>
-        <div class="stat-label">失败</div>
+        <div class="stat-label">失败 (全部)</div>
       </div>
       <div class="stat-card">
         <div class="stat-value rate">${successRate}%</div>
-        <div class="stat-label">成功率</div>
+        <div class="stat-label">成功率 (全部)</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" style="color: #a78bfa;">${stats.avgDuration}ms</div>
-        <div class="stat-label">平均耗时</div>
+        <div class="stat-label">平均耗时 (全部)</div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header">
-        <h2>📊 按文件统计</h2>
+        <h2>📊 按文件统计 (基于全部日志)</h2>
       </div>
       <div class="pdf-stats">
         ${byPdfHtml}
@@ -400,7 +418,7 @@ async function generateLogsPage() {
 
     <div class="card">
       <div class="card-header">
-        <h2>📜 调用记录 (最近 ${logs.entries.length} 条)</h2>
+        <h2>📜 调用记录 (显示最近 ${logs.returnedEntries} 条 / 共 ${logs.totalEntries} 条)</h2>
         <button class="btn btn-danger" onclick="clearLogs()">清空日志</button>
       </div>
       <div class="scrollable">
@@ -756,7 +774,9 @@ async function generateDashboard(inputDir, outputDir) {
       <strong>📡 API 端点:</strong><br>
       <code>GET /api/progress</code> - 获取进度 JSON<br>
       <code>GET /api/files</code> - 获取文件列表 JSON<br>
-      <code>GET /api/logs</code> - 获取 Gemini 调用日志<br>
+      <code>GET /api/logs?limit=N</code> - 获取日志明细(部分)，统计信息基于全部日志<br>
+      <code>GET /api/logs/stats</code> - 获取完整统计信息(基于全部日志)<br>
+      <code>POST /api/logs/clear</code> - 清空日志<br>
       <code>GET /files/{filename}</code> - 下载文件<br><br>
       <a href="/logs" style="color: #ff9f43;">📋 查看 Gemini API 调用日志 →</a>
     </div>
@@ -922,7 +942,7 @@ function createServer(options) {
 program
   .name('server')
   .description('Serve output folder with progress dashboard')
-  .option('-p, --port <number>', 'Port to listen on', parseInt, 3000)
+  .option('-p, --port <number>', 'Port to listen on', (val) => parseInt(val, 10), 3000)
   .option('-H, --host <address>', 'Host to bind to (use 0.0.0.0 for external access)', '127.0.0.1')
   .option('-o, --output <path>', 'Output folder path', 'output')
   .option('-i, --input <path>', 'Input folder path', 'exams')

@@ -199,11 +199,11 @@ async function mergeBase64Images(topBase64, bottomBase64, gap = 0) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
 
-  // Draw top image
-  ctx.drawImage(imgTop, (width - imgTop.width) / 2, 0);
+  // Draw top image (left-aligned)
+  ctx.drawImage(imgTop, 0, 0);
 
-  // Draw bottom image starting after the top image plus the gap
-  ctx.drawImage(imgBottom, (width - imgBottom.width) / 2, imgTop.height + gap);
+  // Draw bottom image starting after the top image plus the gap (left-aligned)
+  ctx.drawImage(imgBottom, 0, imgTop.height + gap);
 
   const buffer = canvas.toBuffer('image/jpeg', { quality: 0.95 });
   return `data:image/jpeg;base64,${buffer.toString('base64')}`;

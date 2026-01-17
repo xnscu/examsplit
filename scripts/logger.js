@@ -128,11 +128,18 @@ export function createLogger(pdfFile) {
 
 /**
  * Get all logs (for API)
+ * Returns:
+ * - entries: filtered and limited log entries (部分明细)
+ * - stats: statistics based on ALL logs (基于全部日志的统计信息)
+ * - fullStats: detailed statistics based on ALL logs (详细统计信息)
+ * - totalEntries: total number of entries in database (数据库中的总条数)
+ * - returnedEntries: number of entries returned (返回的条数)
  */
 export async function getLogs(limit = 100, filter = {}) {
   const logs = await readLogs();
+  const allEntries = logs.entries;
 
-  let entries = logs.entries;
+  let entries = allEntries;
 
   // Apply filters
   if (filter.success !== undefined) {
@@ -142,37 +149,44 @@ export async function getLogs(limit = 100, filter = {}) {
     entries = entries.filter(e => e.pdfFile.includes(filter.pdfFile));
   }
 
-  // Apply limit
+  // Apply limit to filtered entries
+  const filteredTotal = entries.length;
   entries = entries.slice(0, limit);
 
+  // Get full statistics (always based on ALL logs, not filtered)
+  const fullStats = await getLogStats();
+
   return {
-    entries,
-    stats: logs.stats,
-    total: logs.entries.length
+    entries,                          // 返回的明细（已过滤和限制）
+    stats: logs.stats,                // 基本统计（基于全部日志）
+    fullStats,                        // 详细统计（基于全部日志）
+    totalEntries: allEntries.length,  // 数据库中的总条数
+    filteredTotal,                    // 过滤后的总数
+    returnedEntries: entries.length   // 实际返回的条数
   };
 }
 
 /**
- * Get log statistics
+ * Get log statistics (always based on ALL logs)
  */
 export async function getLogStats() {
   const logs = await readLogs();
-  const entries = logs.entries;
+  const allEntries = logs.entries; // 始终基于全部日志
 
-  // Calculate additional stats
-  const recentEntries = entries.slice(0, 100);
+  // Calculate additional stats from ALL entries
+  const recentEntries = allEntries.slice(0, 100);
   const recentSuccess = recentEntries.filter(e => e.success).length;
   const recentFailed = recentEntries.filter(e => !e.success).length;
 
-  // Calculate average duration
-  const successfulCalls = entries.filter(e => e.success && e.duration);
+  // Calculate average duration from ALL successful calls
+  const successfulCalls = allEntries.filter(e => e.success && e.duration);
   const avgDuration = successfulCalls.length > 0
     ? Math.round(successfulCalls.reduce((acc, e) => acc + e.duration, 0) / successfulCalls.length)
     : 0;
 
-  // Group by PDF file
+  // Group by PDF file - using ALL entries
   const byPdf = {};
-  for (const entry of entries) {
+  for (const entry of allEntries) {
     if (!byPdf[entry.pdfFile]) {
       byPdf[entry.pdfFile] = { success: 0, failed: 0, total: 0 };
     }
@@ -185,7 +199,8 @@ export async function getLogStats() {
   }
 
   return {
-    ...logs.stats,
+    ...logs.stats, // 累计统计（基于全部日志）
+    totalEntries: allEntries.length, // 明确返回全部日志条数
     recent: {
       success: recentSuccess,
       failed: recentFailed,
