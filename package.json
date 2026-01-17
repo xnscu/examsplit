@@ -4,8 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "split2": "dotenv run node scripts/split-pdf.js test/exam.pdf",
-    "split": "node scripts/split-pdf-raw.js test/exam.pdf",
+    "split": "dotenv run node scripts/batch-process.js -i test -o output2 --force",
     "cli": "node scripts/cli.js",
     "batch": "node scripts/batch-process.js",
     "serve": "node scripts/server.js",

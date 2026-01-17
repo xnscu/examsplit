@@ -58,7 +58,7 @@ const NodeCanvasImageFactory = class {
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Gemini API proxy configuration
-const GEMINI_PROXY_URL = 'https://gproxy.xnscu.com/v1beta/models/gemini-3-flash-preview:generateContent';
+const GEMINI_PROXY_URL = 'https://gproxy.xnscu.com/v1beta/models/gemini-3-flash-preview:generateContent?key='+process.env.GEMINI_API_KEY;
 
 /**
  * Call Gemini API via proxy (no API key required)

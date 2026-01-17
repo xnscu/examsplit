@@ -1,6 +1,186 @@
 {
   "entries": [
     {
+      "id": "1768652767896-qb14zjsms",
+      "timestamp": "2026-01-17T12:26:07.896Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 2,
+      "success": true,
+      "questionsFound": 5,
+      "duration": 24093,
+      "attempt": 1
+    },
+    {
+      "id": "1768652742918-jjy8zhkm5",
+      "timestamp": "2026-01-17T12:25:42.918Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": true,
+      "questionsFound": 19,
+      "duration": 56535,
+      "attempt": 1
+    },
+    {
+      "id": "1768651483949-0sl9o4m9c",
+      "timestamp": "2026-01-17T12:04:43.949Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 2,
+      "success": true,
+      "questionsFound": 5,
+      "duration": 3429,
+      "attempt": 1
+    },
+    {
+      "id": "1768651479610-3yypgse05",
+      "timestamp": "2026-01-17T12:04:39.610Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": true,
+      "questionsFound": 19,
+      "duration": 51624,
+      "attempt": 1
+    },
+    {
+      "id": "1768651210144-rwhaulsmy",
+      "timestamp": "2026-01-17T12:00:10.144Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 2,
+      "success": true,
+      "questionsFound": 5,
+      "duration": 3141,
+      "attempt": 1
+    },
+    {
+      "id": "1768651206120-kcch2nbbn",
+      "timestamp": "2026-01-17T12:00:06.120Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": true,
+      "questionsFound": 19,
+      "duration": 28976,
+      "attempt": 1
+    },
+    {
+      "id": "1768650136237-x617hjwkd",
+      "timestamp": "2026-01-17T11:42:16.237Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 2,
+      "success": true,
+      "questionsFound": 5,
+      "duration": 21067,
+      "attempt": 1
+    },
+    {
+      "id": "1768650114303-dcq5eghbq",
+      "timestamp": "2026-01-17T11:41:54.303Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": true,
+      "questionsFound": 19,
+      "duration": 45739,
+      "attempt": 1
+    },
+    {
+      "id": "1768649946375-6ens9zvlf",
+      "timestamp": "2026-01-17T11:39:06.375Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": false,
+      "error": "API request failed: 400 {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n",
+      "duration": 2414,
+      "attempt": 3
+    },
+    {
+      "id": "1768649941959-9peycw6a1",
+      "timestamp": "2026-01-17T11:39:01.959Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": false,
+      "error": "API request failed: 400 {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n",
+      "duration": 1806,
+      "attempt": 2
+    },
+    {
+      "id": "1768649938149-zafwpswr3",
+      "timestamp": "2026-01-17T11:38:58.149Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": false,
+      "error": "API request failed: 400 {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n",
+      "duration": 2166,
+      "attempt": 1
+    },
+    {
+      "id": "1768649933737-plxmivikc",
+      "timestamp": "2026-01-17T11:38:53.737Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": false,
+      "error": "API request failed: 400 {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n",
+      "duration": 2086,
+      "attempt": 5
+    },
+    {
+      "id": "1768649929649-67cr9wjyq",
+      "timestamp": "2026-01-17T11:38:49.649Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": false,
+      "error": "API request failed: 400 {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n",
+      "duration": 1918,
+      "attempt": 4
+    },
+    {
+      "id": "1768649925728-2oxuojm9n",
+      "timestamp": "2026-01-17T11:38:45.728Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": false,
+      "error": "API request failed: 400 {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n",
+      "duration": 1508,
+      "attempt": 3
+    },
+    {
+      "id": "1768649922217-sgkvbfjel",
+      "timestamp": "2026-01-17T11:38:42.217Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": false,
+      "error": "API request failed: 400 {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n",
+      "duration": 1289,
+      "attempt": 2
+    },
+    {
+      "id": "1768649918924-6y2yfnmy8",
+      "timestamp": "2026-01-17T11:38:38.924Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": false,
+      "error": "API request failed: 400 {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n",
+      "duration": 1711,
+      "attempt": 1
+    },
+    {
+      "id": "1768649769967-s9cycospw",
+      "timestamp": "2026-01-17T11:36:09.967Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 2,
+      "success": true,
+      "questionsFound": 5,
+      "duration": 11184,
+      "attempt": 1
+    },
+    {
+      "id": "1768649757903-uyd3pj1we",
+      "timestamp": "2026-01-17T11:35:57.903Z",
+      "pdfFile": "2012四川理.pdf",
+      "pageNumber": 1,
+      "success": true,
+      "questionsFound": 19,
+      "duration": 30210,
+      "attempt": 1
+    },
+    {
       "id": "1768637369585-8cyno1hvs",
       "timestamp": "2026-01-17T08:09:29.585Z",
       "pdfFile": "2012四川理.pdf",
@@ -382,9 +562,9 @@
     }
   ],
   "stats": {
-    "total": 38,
-    "success": 13,
-    "failed": 25,
-    "lastUpdated": "2026-01-17T08:09:29.585Z"
+    "total": 56,
+    "success": 23,
+    "failed": 33,
+    "lastUpdated": "2026-01-17T12:26:07.897Z"
   }
 }
