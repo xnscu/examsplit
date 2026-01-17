@@ -183,6 +183,7 @@ async function detectQuestionsOnPage(image, pageNumber, logger, maxRetries = 5) 
 /**
  * Merges two base64 images vertically with an optional gap.
  * A negative gap allows for overlapping (removing internal paddings).
+ * Before merging, trims all whitespace from both images to avoid double spacing.
  */
 async function mergeBase64Images(topBase64, bottomBase64, gap = 0) {
   const [imgTop, imgBottom] = await Promise.all([
@@ -190,8 +191,20 @@ async function mergeBase64Images(topBase64, bottomBase64, gap = 0) {
     loadImage(bottomBase64)
   ]);
 
-  const width = Math.max(imgTop.width, imgBottom.width);
-  const height = Math.max(0, imgTop.height + imgBottom.height + gap);
+  // Trim whitespace from both images using existing trimWhitespace function
+  const topCanvas = createCanvas(imgTop.width, imgTop.height);
+  const topCtx = topCanvas.getContext('2d');
+  topCtx.drawImage(imgTop, 0, 0);
+  const topBounds = trimWhitespace(topCtx, imgTop.width, imgTop.height);
+
+  const bottomCanvas = createCanvas(imgBottom.width, imgBottom.height);
+  const bottomCtx = bottomCanvas.getContext('2d');
+  bottomCtx.drawImage(imgBottom, 0, 0);
+  const bottomBounds = trimWhitespace(bottomCtx, imgBottom.width, imgBottom.height);
+
+  // Calculate final dimensions using trimmed bounds
+  const width = Math.max(topBounds.w, bottomBounds.w);
+  const height = Math.max(0, topBounds.h + bottomBounds.h + gap);
 
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
@@ -199,11 +212,19 @@ async function mergeBase64Images(topBase64, bottomBase64, gap = 0) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
 
-  // Draw top image (left-aligned)
-  ctx.drawImage(imgTop, 0, 0);
+  // Draw trimmed top image (left-aligned)
+  ctx.drawImage(
+    topCanvas,
+    topBounds.x, topBounds.y, topBounds.w, topBounds.h,
+    0, 0, topBounds.w, topBounds.h
+  );
 
-  // Draw bottom image starting after the top image plus the gap (left-aligned)
-  ctx.drawImage(imgBottom, 0, imgTop.height + gap);
+  // Draw trimmed bottom image starting after the top image plus the gap (left-aligned)
+  ctx.drawImage(
+    bottomCanvas,
+    bottomBounds.x, bottomBounds.y, bottomBounds.w, bottomBounds.h,
+    0, topBounds.h + gap, bottomBounds.w, bottomBounds.h
+  );
 
   const buffer = canvas.toBuffer('image/jpeg', { quality: 0.95 });
   return `data:image/jpeg;base64,${buffer.toString('base64')}`;
