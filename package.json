@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "split": "dotenv run node scripts/batch-process.js -i test -o output2 --force",
+    "split": "dotenv run node scripts/batch-process.js -i test -o output2",
     "cli": "node scripts/cli.js",
     "batch": "node scripts/batch-process.js",
+    "align": "node scripts/post-process-alignment.js",
     "serve": "node scripts/server.js",
     "serve:public": "node scripts/server.js --host 0.0.0.0",
     "pm2:start": "pm2 start ecosystem.config.cjs --only exam-batch",

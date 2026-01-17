@@ -11,7 +11,7 @@ import JSZip from 'jszip';
 import fs from 'fs/promises';
 import path from 'path';
 // Import shared utilities and AI config
-import { getTrimmedBounds, isContained } from './canvas-utils.js';
+import { getTrimmedBounds, isContained, trimWhitespace } from './canvas-utils.js';
 import { PROMPTS, SCHEMAS } from './ai-config.js';
 import { createLogger } from './logger.js';
 
@@ -210,6 +210,96 @@ async function mergeBase64Images(topBase64, bottomBase64, gap = 0) {
 }
 
 /**
+ * Trim whitespace from image and add uniform padding
+ * @param {string} imageBase64 - Base64 encoded image
+ * @param {number} padding - Padding to add after trimming
+ * @returns {Promise<{dataUrl: string, width: number, height: number}>}
+ */
+async function trimAndPadImage(imageBase64, padding = 10) {
+  const img = await loadImage(imageBase64);
+
+  // Create temporary canvas to analyze the image
+  const tempCanvas = createCanvas(img.width, img.height);
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.drawImage(img, 0, 0);
+
+  // Find content bounds by trimming whitespace
+  const bounds = trimWhitespace(tempCtx, img.width, img.height);
+
+  // If no content found, return original
+  if (bounds.w === 0 || bounds.h === 0) {
+    return {
+      dataUrl: imageBase64,
+      width: img.width,
+      height: img.height
+    };
+  }
+
+  // Create new canvas with trimmed content plus padding
+  const newWidth = bounds.w + (padding * 2);
+  const newHeight = bounds.h + (padding * 2);
+  const newCanvas = createCanvas(newWidth, newHeight);
+  const newCtx = newCanvas.getContext('2d');
+
+  // Fill with white background
+  newCtx.fillStyle = '#ffffff';
+  newCtx.fillRect(0, 0, newWidth, newHeight);
+
+  // Draw trimmed content with padding
+  newCtx.drawImage(
+    tempCanvas,
+    bounds.x, bounds.y, bounds.w, bounds.h,
+    padding, padding, bounds.w, bounds.h
+  );
+
+  const buffer = newCanvas.toBuffer('image/jpeg', { quality: 0.95 });
+  return {
+    dataUrl: `data:image/jpeg;base64,${buffer.toString('base64')}`,
+    width: newWidth,
+    height: newHeight
+  };
+}
+
+/**
+ * Align all images to the same width by adding right padding
+ * @param {Array<{id: string, dataUrl: string}>} questions - Array of question images
+ * @param {number} targetWidth - Target width for all images
+ * @returns {Promise<Array<{id: string, dataUrl: string}>>}
+ */
+async function alignImageWidths(questions, targetWidth) {
+  const aligned = [];
+
+  for (const question of questions) {
+    const img = await loadImage(question.dataUrl);
+
+    // If already at target width, keep as is
+    if (img.width === targetWidth) {
+      aligned.push(question);
+      continue;
+    }
+
+    // Create new canvas with target width
+    const canvas = createCanvas(targetWidth, img.height);
+    const ctx = canvas.getContext('2d');
+
+    // Fill with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, targetWidth, img.height);
+
+    // Draw original image (left-aligned)
+    ctx.drawImage(img, 0, 0);
+
+    const buffer = canvas.toBuffer('image/jpeg', { quality: 0.95 });
+    aligned.push({
+      ...question,
+      dataUrl: `data:image/jpeg;base64,${buffer.toString('base64')}`
+    });
+  }
+
+  return aligned;
+}
+
+/**
  * Crop and stitch image fragments based on detected bounding boxes
  */
 async function cropAndStitchImage(sourceDataUrl, boxes, originalWidth, originalHeight, settings) {
@@ -355,7 +445,7 @@ async function processPdf(pdfPath, options) {
   console.log(`🤖 Using Gemini API proxy (no key required)`);
 
   // Process pages
-  const allQuestions = [];
+  let allQuestions = [];
   const debugData = [];
 
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
@@ -426,6 +516,37 @@ async function processPdf(pdfPath, options) {
 
   console.log(`\n✨ Extracted ${allQuestions.length} questions in total`);
 
+  // Post-process images: trim, pad, and align widths
+  if (allQuestions.length > 0 && options.enableAlignment) {
+    console.log('\n🔧 Post-processing images...');
+
+    // Step 1: Trim whitespace and add uniform padding
+    console.log(`  ✂️  Trimming whitespace and adding ${options.finalPadding}px padding...`);
+    for (let i = 0; i < allQuestions.length; i++) {
+      const q = allQuestions[i];
+      const result = await trimAndPadImage(q.dataUrl, options.finalPadding);
+      q.dataUrl = result.dataUrl;
+      q.processedWidth = result.width;
+      q.processedHeight = result.height;
+
+      // Also process originalDataUrl if exists
+      if (q.originalDataUrl) {
+        const originalResult = await trimAndPadImage(q.originalDataUrl, options.finalPadding);
+        q.originalDataUrl = originalResult.dataUrl;
+      }
+    }
+
+    // Step 2: Find maximum width
+    const maxWidth = Math.max(...allQuestions.map(q => q.processedWidth));
+    console.log(`  📏 Maximum width: ${maxWidth}px`);
+
+    // Step 3: Align all images to max width
+    console.log('  ↔️  Aligning widths...');
+    allQuestions = await alignImageWidths(allQuestions, maxWidth);
+
+    console.log('  ✅ Post-processing complete');
+  }
+
   // Create ZIP
   console.log('📦 Creating ZIP archive...');
   const zip = new JSZip();
@@ -479,10 +600,12 @@ export const DEFAULT_OPTIONS = {
   output: 'output.zip',
   scale: 3.0,
   cropPadding: 25,
-  canvasPaddingLeft: 10,
-  canvasPaddingRight: 10,
-  canvasPaddingY: 10,
-  mergeOverlap: 20
+  canvasPaddingLeft: 0,
+  canvasPaddingRight: 0,
+  canvasPaddingY: 0,
+  mergeOverlap: 0,
+  enableAlignment: true,  // Enable post-processing alignment
+  finalPadding: 10        // Padding to add after trimming whitespace
 };
 
 // Export the main processing function

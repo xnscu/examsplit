@@ -26,6 +26,9 @@ program
   .option('--canvas-padding-right <number>', 'Right padding (0-100)', parseFloat, DEFAULT_OPTIONS.canvasPaddingRight)
   .option('--canvas-padding-y <number>', 'Top/bottom padding (0-100)', parseFloat, DEFAULT_OPTIONS.canvasPaddingY)
   .option('--merge-overlap <number>', 'Fragment merge overlap (0-100)', parseFloat, DEFAULT_OPTIONS.mergeOverlap)
+  .option('--enable-alignment', 'Enable post-processing alignment', DEFAULT_OPTIONS.enableAlignment)
+  .option('--no-enable-alignment', 'Disable post-processing alignment')
+  .option('--final-padding <number>', 'Final padding after trimming (0-100)', parseFloat, DEFAULT_OPTIONS.finalPadding)
   .action(async (pdfPath, options) => {
     try {
       // If output is the default value, generate output path based on PDF path
